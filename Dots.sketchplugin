@@ -1,0 +1,186 @@
+
+
+//  Dots!
+
+//  Tue 11 Nov 2014 17:27 EST
+//  Wed 12 Nov 2014 13:46 EST
+
+//  Stewart Smith
+//  Twitter @stewd_io
+//  Web      stewd.io
+//  GitHub   stewdio
+
+
+var verbose = true
+
+
+
+
+
+
+//  Get the current “canvas”
+//  and its dimensions.
+
+var 
+page = doc.currentPage(),
+artboard = page.currentArtboard() || ( page.artboards().count() ? page.artboards()[0] : null ),
+artboardFrame,
+canvas, canvasFrame, canvasMinDim
+
+if( artboard ){
+
+	if( verbose ) log( 'We’re going to reuse an existing artboard as our canvas.' )
+	canvas = artboard
+}
+else {
+
+	if( verbose ) log( 'No artboard exists so we’re going to create a new one to use as our canvas.' )
+	artboard = MSArtboardGroup.new()
+	artboard.setName( 'Dots board' )
+	artboard.frame().setWidth(  600 )
+	artboard.frame().setHeight( 600 )
+	page.addLayer( artboard )
+	canvas = artboard	
+}
+canvasFrame = canvas.frame()
+canvasMinDim = Math.min( canvasFrame.width(), canvasFrame.height() )
+if( verbose ) log( 'Our canvas is named “'+ canvas.name() +'” and is '+ canvasFrame.width() +' × '+ canvasFrame.height() +'.' )
+
+
+
+
+
+
+//  We’re about to create some Dots.
+//  Let’s get our variables in order...
+
+var 
+dotsGroup,
+i, numberOfDots = 30,
+r, x, y,
+dot, style, stylePart, 
+hue, saturation, value, rgb,
+dotFrame, edge
+
+
+//  To keep things tidy we’ll shove all our Dots
+//  into one little folder.
+
+dotsGroup = canvas.addLayerOfType( 'group' )
+dotsGroup.setName( 'Dots group' )
+
+
+//  Ok. Time to get serious and draw some Dots.
+
+for( i = 0; i < numberOfDots; i ++ ){
+	
+	r = Math.ceil( canvasMinDim / 30 ) + Math.ceil( Math.random() * canvasMinDim / 6 )
+	x = Math.floor( Math.random() * canvasFrame.width())
+	y = Math.floor( Math.random() * canvasFrame.height())
+
+	
+	//  Right now Sketch only supports new Layers
+	//  of type Rectangle or Text. WTF?!?!?
+	//  But we can apply a border radius that will
+	//  make a square appear to be a circle.
+	
+	dot = dotsGroup.addLayerOfType( 'rectangle' )
+	dot.setName( 'Dot ' + ( i + 1 ))
+	style = [[dot style] fills]
+	stylePart = style.addNewStylePart()
+
+
+	//  Color it!
+	//  We’re going to get much more vibrant color by using HSV 
+	//  with a random Hue and full-on Saturation and Value
+	//  than by using random Red, Green, and Blue channel values.
+	//  Then we just convert from HSV to RGB.
+
+	hue        = Math.random()
+	saturation = 1.0
+	value      = 1.0
+	rgb        = HSVtoRGB( hue, saturation, value )
+	stylePart.color = [MSColor colorWithRed:rgb.r green:rgb.g blue:rgb.b alpha:0.95]
+	stylePart.fillType = 0
+
+
+	//  Let’s set the Blending Mode to 'Multiply.'
+	//  It seems we can do this either on the Layer’s overall Style
+	//  or within the Style’s specific Fill settings
+	//  but I couldn’t get the latter to work. So forget it.
+
+	dot.style().contextSettings().setBlendMode( 2 )
+
+
+	//  Set position and bounds.
+
+	dotFrame = dot.frame()
+	dotFrame.setX( x - r )
+	dotFrame.setY( y - r )
+	dotFrame.setWidth(  r * 2 )
+	dotFrame.setHeight( r * 2 )
+
+
+	//  Fixing the border radius is more painful...
+	//  We have to access the actual Path within our Dot Layer
+	//  and also have to force a recalculation / redraw.
+	//  Why is it called fixedRadius instead of borderRadius
+	//  or just plain radius?
+
+	edge = [[dot layers] firstObject]
+	edge.setFixedRadius( r )
+	edge.resetPointsBasedOnUserInteraction()
+
+
+	//  I’ve been long spoiled by Chrome’s awesome JavaScript console.
+	//  Unfortunately there’s no comparable debug console in Sketch.
+	//  You have to survive primarily on OS X’s Console which you can
+	//  filter with the keyword “Sketch”...
+	//  And within that context the .treeAsDictionary() function is
+	//  INCREDIBLY USEFUL !
+
+	if( i === 0 && verbose ) log( dot.treeAsDictionary() )
+}
+
+
+//  And finally, our Dots Group bounds haven’t actually updated
+//  which gets weird when you select Dots or resize the group
+//  so we’d better force a recalculation / redraw.
+
+dotsGroup.resizeRoot()
+
+
+
+
+
+
+//  Convert an HSV color model (Hue, Saturation, Value)
+//  into an RGB one (Red, Green, Blue).
+//  Accepts values from 0 to 1 inclusive
+//  and returns likewise.
+//  Check out my sweet Array literal return expression ;)
+
+function HSVtoRGB( h, s, v ){
+
+	var i, f, p, q, t, r, g, b
+	
+	i = Math.floor( h * 6 )
+	f = h * 6 - i
+	p = v * ( 1 - s )
+	q = v * ( 1 - f * s )
+	t = v * ( 1 - ( 1 - f ) * s )
+	
+	return [
+
+		{ r: v, g: t, b: p },
+		{ r: q, g: v, b: p },
+		{ r: p, g: v, b: t },
+		{ r: p, g: q, b: v },
+		{ r: t, g: p, b: v },
+		{ r: v, g: p, b: q }
+
+	][ i %  6 ]
+}
+
+
+
