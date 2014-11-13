@@ -179,7 +179,7 @@ function HSVtoRGB( h, s, v ){
 		{ r: t, g: p, b: v },
 		{ r: v, g: p, b: q }
 
-	][ i %  6 ]
+	][ i % 6 ]
 }
 
 
