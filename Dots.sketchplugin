@@ -2,9 +2,6 @@
 
 //  Dots!
 
-//  Tue 11 Nov 2014 17:27 EST
-//  Wed 12 Nov 2014 13:46 EST
-
 //  Stewart Smith
 //  Twitter @stewd_io
 //  Web      stewd.io
@@ -18,8 +15,12 @@ var verbose = true
 
 
 
-//  Get the current “canvas”
-//  and its dimensions.
+//  Get the current “canvas” and its dimensions.
+//  A Document will always contain a Page, 
+//  but it might not contain an Artbaord.
+//  If there’s Artboard we’ll create one.
+//  If there is an Artboard we’ll target the selected one
+//  or if none selected, the most recently used one.
 
 var 
 page = doc.currentPage(),
@@ -64,7 +65,9 @@ dotFrame, edge
 
 
 //  To keep things tidy we’ll shove all our Dots
-//  into one little folder.
+//  into one little group folder.
+//  Running this plugin multiple times will result in
+//  multiple “Dots group” folders--sort of nice.
 
 dotsGroup = canvas.addLayerOfType( 'group' )
 dotsGroup.setName( 'Dots group' )
@@ -79,10 +82,11 @@ for( i = 0; i < numberOfDots; i ++ ){
 	y = Math.floor( Math.random() * canvasFrame.height())
 
 	
-	//  Right now Sketch only supports new Layers
-	//  of type Rectangle or Text. WTF?!?!?
-	//  But we can apply a border radius that will
-	//  make a square appear to be a circle.
+	//  The docs say that Sketch only supports new Layers
+	//  of type Rectangle or Text, though Group seems to work.
+	//  Regardless, Circle / Ellipse / Oval isn’t available.
+	//  Instead we can create a Rectangle and apply a border radius
+	//  that will make a square appear to be a circle.
 	
 	dot = dotsGroup.addLayerOfType( 'rectangle' )
 	dot.setName( 'Dot ' + ( i + 1 ))
@@ -112,7 +116,10 @@ for( i = 0; i < numberOfDots; i ++ ){
 	dot.style().contextSettings().setBlendMode( 2 )
 
 
-	//  Set position and bounds.
+	//  Set position and dimensions.
+	//  Looks like the XY refers to the upper left corner
+	//  so in order to use this as a center coordinate
+	//  we need to subtract the shape radius (r) from XY.
 
 	dotFrame = dot.frame()
 	dotFrame.setX( x - r )
